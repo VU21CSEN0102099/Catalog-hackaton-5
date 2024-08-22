@@ -1,0 +1,129 @@
+import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+class ChargingStation {
+    String name;
+    String location;
+    int availableSlots;
+    List<String> connectorTypes;
+    double pricePerKWh;
+
+    public ChargingStation(String name, String location, int availableSlots, List<String> connectorTypes, double pricePerKWh) {
+        this.name = name;
+        this.location = location;
+        this.availableSlots = availableSlots;
+        this.connectorTypes = connectorTypes;
+        this.pricePerKWh = pricePerKWh;
+    }
+}
+
+class Booking {
+    String stationName;
+    LocalDateTime bookingTime;
+
+    public Booking(String stationName, LocalDateTime bookingTime) {
+        this.stationName = stationName;
+        this.bookingTime = bookingTime;
+    }
+}
+
+public class EVChargingStationFinder {
+    private static List<ChargingStation> stations = new ArrayList<>();
+    private static List<Booking> bookings = new ArrayList<>();
+    private static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        initializeStations();
+
+        while (true) {
+            System.out.println("\n1. Find Charging Stations");
+            System.out.println("2. Book a Charging Slot");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    findChargingStations();
+                    break;
+                case 2:
+                    bookChargingSlot();
+                    break;
+                case 3:
+                    System.out.println("Thank you for using the EV Charging Station Finder. Goodbye!");
+                    System.exit(0);
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private static void initializeStations() {
+        stations.add(new ChargingStation("Station A", "Downtown", 5, Arrays.asList("Type 2", "CCS"), 0.30));
+        stations.add(new ChargingStation("Station B", "Suburb", 3, Arrays.asList("Type 2", "CHAdeMO"), 0.25));
+        stations.add(new ChargingStation("Station C", "Highway", 10, Arrays.asList("Type 2", "CCS", "CHAdeMO"), 0.35));
+    }
+
+    private static void findChargingStations() {
+        System.out.println("\nFilters:");
+        System.out.print("Location (press Enter to skip): ");
+        String locationFilter = scanner.nextLine();
+
+        System.out.print("Connector Type (press Enter to skip): ");
+        String connectorFilter = scanner.nextLine();
+
+        System.out.print("Maximum price per kWh (press Enter to skip): ");
+        String maxPriceInput = scanner.nextLine();
+        double maxPrice = maxPriceInput.isEmpty() ? Double.MAX_VALUE : Double.parseDouble(maxPriceInput);
+
+        System.out.println("\nMatching Charging Stations:");
+        for (ChargingStation station : stations) {
+            if ((locationFilter.isEmpty() || station.location.toLowerCase().contains(locationFilter.toLowerCase())) &&
+                (connectorFilter.isEmpty() || station.connectorTypes.contains(connectorFilter)) &&
+                station.pricePerKWh <= maxPrice) {
+                System.out.println("Name: " + station.name);
+                System.out.println("Location: " + station.location);
+                System.out.println("Available Slots: " + station.availableSlots);
+                System.out.println("Connector Types: " + String.join(", ", station.connectorTypes));
+                System.out.println("Price per kWh: $" + station.pricePerKWh);
+                System.out.println();
+            }
+        }
+    }
+
+    private static void bookChargingSlot() {
+        System.out.print("\nEnter the name of the charging station: ");
+        String stationName = scanner.nextLine();
+
+        ChargingStation selectedStation = null;
+        for (ChargingStation station : stations) {
+            if (station.name.equalsIgnoreCase(stationName)) {
+                selectedStation = station;
+                break;
+            }
+        }
+
+        if (selectedStation == null) {
+            System.out.println("Station not found.");
+            return;
+        }
+
+        if (selectedStation.availableSlots == 0) {
+            System.out.println("No available slots at this station.");
+            return;
+        }
+
+        System.out.print("Enter booking date and time (yyyy-MM-dd HH:mm): ");
+        String bookingTimeStr = scanner.nextLine();
+        LocalDateTime bookingTime = LocalDateTime.parse(bookingTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+        Booking newBooking = new Booking(selectedStation.name, bookingTime);
+        bookings.add(newBooking);
+        selectedStation.availableSlots--;
+
+        System.out.println("Booking confirmed for " + selectedStation.name + " at " + bookingTime);
+    }
+}
